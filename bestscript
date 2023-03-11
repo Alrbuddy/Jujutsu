@@ -1,0 +1,160 @@
+local Library = loadstring(game:HttpGet("https://github.com/HeiKe2022/Mod-UI/raw/main/LegoHacks.lua"))()
+
+local Main = Library:CreateWindow("Main")
+
+local Mobs = {}
+
+for i, v in pairs(game:GetService("Workspace").Terrain.MobsCache.Mobs:GetChildren()) do
+    if v:IsA "Model" and v:FindFirstChild("Head") and v.Name ~= "Dummy Test" then
+        if not table.find(Mobs, tostring(v)) then
+            table.insert(Mobs, tostring(v))
+        end
+    end
+end
+
+local function NPC()
+    local dist, thing = math.huge
+    for i, v in pairs(game:GetService("Workspace").Terrain.MobsCache.Mobs:GetChildren()) do
+        if v:IsA("Model") and v.Name == npc and v.Head.Transparency ~= 1 then -- When the npcs die, they don't get removed. They just go invisible
+            local mag =
+                (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
+            if mag < dist then
+                dist = mag
+                thing = v
+            end
+        end
+    end
+    return thing
+end
+
+Main:AddList(
+    {
+        text = "Mobs",
+        values = Mobs,
+        value = Mobs[1],
+        callback = function(Selected)
+            npc = Selected
+        end
+    }
+)
+
+local Distance = 7
+
+Main:AddToggle(
+    {
+        text = "Autofarm Mob",
+        state = false,
+        callback = function(State)
+            autofarm = State
+            while autofarm do
+                task.wait()
+                pcall(
+                    function()
+                        local lp = game.Players.LocalPlayer
+                        local NPC = NPC()
+                        local newPos = NPC.HumanoidRootPart.Position - NPC.HumanoidRootPart.CFrame.lookVector * Distance
+                        lp.Character.HumanoidRootPart.CFrame = CFrame.new(newPos, NPC.HumanoidRootPart.Position)
+                    end
+                )
+            end
+        end
+    }
+)
+
+Main:AddSlider(
+    {
+        text = "Distance",
+        min = 5,
+        max = 14,
+        dual = true,
+        value = Distance,
+        value2 = 10,
+        callback = function(Value)
+            Distance = Value
+        end
+    }
+)
+
+Main:AddToggle(
+    {
+        text = "InstaKill",
+        state = false,
+        callback = function(State)
+            insta = State
+            while insta do
+                local player = game.Players.LocalPlayer.Character
+                for _, mob in ipairs(workspace.Terrain.MobsCache.Mobs:GetChildren()) do
+                    if (player.HumanoidRootPart.Position - mob.PrimaryPart.Position).Magnitude <= 10 then -- to reduce lag
+                        local args = {
+                            [1] = "RegisterHit",
+                            [2] = {
+                                ["AttackType"] = "Light",
+                                ["AirCombo"] = false,
+                                ["Ticks"] = 1,
+                                ["Weapon"] = "Cursed Fist",
+                                ["FoundPlayers"] = {
+                                    [1] = mob
+                                }
+                            }
+                        }
+                        game:GetService("ReplicatedStorage").CombatStorage.Communication.Events.CombatEvent:FireServer(
+                            unpack(args)
+                        )
+                    end
+                end
+                task.wait()
+            end
+        end
+    }
+)
+
+local Main2 = Library:CreateWindow("NPCS")
+
+local npcs = {}
+
+for i, v in pairs(game:GetService("Workspace").Terrain.World.NPcs.Normal:GetChildren()) do
+    if v:IsA "Model" then
+        if not table.find(npcs, tostring(v)) then
+            table.insert(npcs, tostring(v))
+        end
+    end
+end
+
+Main2:AddList(
+    {
+        text = "Npc",
+        values = npcs,
+        value = npcs[1],
+        callback = function(Selected)
+            local npcModel = game:GetService("Workspace").Terrain.World.NPcs.Normal:FindFirstChild(tostring(Selected))
+            if npcModel then
+                local npcPosition = npcModel.PrimaryPart.Position
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(npcPosition)
+            else
+                warn("NPC not found:", Selected)
+            end
+        end
+    }
+)
+
+local Main3 = Library:CreateWindow("TELEPORTS")
+
+Main3:AddButton(
+    {
+        text = "City",
+        callback = function()
+            game:GetService("TeleportService"):Teleport(12447882126, LocalPlayer)
+        end
+    }
+)
+
+Main3:AddButton(
+    {
+        text = "Main-Menu",
+        callback = function()
+            game:GetService("TeleportService"):Teleport(12398213232, LocalPlayer)
+        end
+    }
+)
+
+Library:Init()
